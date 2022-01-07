@@ -1,20 +1,18 @@
 import time
 import torch
-import numpy as np
 import torch.nn as nn
 import torch_geometric.transforms as T
 
 from tqdm import tqdm
 from torch.optim import Adam
-from torch_geometric.utils import to_dense_adj
-from torch_geometric.datasets import Planetoid, WebKB, WikipediaNetwork, NELL
+from torch_geometric.datasets import Planetoid, WebKB, WikipediaNetwork
 
 from model.mlp import MLPNet
 from model.gcn import GCNNet
 from model.gat import GATNet
 from model.gin import GINNet
 
-from utils import set_global_seed, show_class_acc, mask_heter_edges
+from utils import set_global_seed
 from configs import args
 
 print(args)
@@ -50,15 +48,8 @@ elif args.dataset in ['squirrel', 'chameleon']:
     data.train_mask = data.train_mask[:, args.used_mask]
     data.val_mask = data.val_mask[:, args.used_mask]
     data.test_mask = data.test_mask[:, args.used_mask]
-elif args.dataset in ['NELL']:
-    dataset = NELL(root='./data')
-    data = dataset[0]
     
 
-if args.cal_degree:
-    adj = to_dense_adj(data.edge_index.cpu()).squeeze(dim=0)
-    node_degree = adj.sum(dim=0) + adj.sum(dim=1)
-    node_degree = node_degree.numpy().astype(int)
 
 for i in range(args.repeat):
     set_global_seed(args.seed + i * 10)
@@ -109,11 +100,11 @@ for i in range(args.repeat):
     model.load_state_dict(torch.load('./ckpt/{}.pt'.format(args.model)))
     model.eval()
     output = model(data)
-    
+
     loss_t = loss(output[data.test_mask], data.y[data.test_mask])
     test_loss = loss_t
     pred = output.argmax(dim=1)
     test_acc = (pred[data.test_mask] == data.y[data.test_mask]).sum() / data.test_mask.sum()
     print('TestLoss: {:.3}, TestAcc: {:.3}'.format(test_loss.item(), test_acc.item() * 100))
-    # show_class_acc(pred[data.test_mask], data.y[data.test_mask])
+
 
