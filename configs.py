@@ -1,0 +1,15 @@
+import argparse
+
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument('--dataset', '-d', type=str, default='cora')
+arg_parser.add_argument('--used_mask', '-msk', type=int, default=0)
+arg_parser.add_argument('--seed', '-s', type=int, default=42)
+arg_parser.add_argument('--hidden_dim', '-hdim', type=int, default=128)
+arg_parser.add_argument('--epoch', '-e', type=int, default=200)
+arg_parser.add_argument('-lr', type=float, default=1e-3)
+arg_parser.add_argument('-wd', type=float, default=1e-5)
+arg_parser.add_argument('-dp', type=float, default=0.5)
+arg_parser.add_argument('--repeat', '-r', type=int, default=10)
+arg_parser.add_argument('--model', '-m', type=str, default='gat', choices=['mlp', 'gcn', 'gat', 'gin'])
+arg_parser.add_argument('--cal_degree', action='store_true')
+args = arg_parser.parse_args()
