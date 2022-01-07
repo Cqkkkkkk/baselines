@@ -1,6 +1,6 @@
-import time
 import torch
 import torch.nn as nn
+import numpy as np
 import torch_geometric.transforms as T
 
 from tqdm import tqdm
@@ -39,72 +39,64 @@ if args.dataset in ['cora', 'citeseer', 'pubmed']:
 elif args.dataset in ['texas', 'cornell', 'wisconsin']:
     dataset = WebKB(root='./data', name=args.dataset)
     data = dataset[0]
-    data.train_mask = data.train_mask[:, args.used_mask]
-    data.val_mask = data.val_mask[:, args.used_mask]
-    data.test_mask = data.test_mask[:, args.used_mask]
 elif args.dataset in ['squirrel', 'chameleon']:
     dataset = WikipediaNetwork(root='./data', name=args.dataset)
     data = dataset[0]
-    data.train_mask = data.train_mask[:, args.used_mask]
-    data.val_mask = data.val_mask[:, args.used_mask]
-    data.test_mask = data.test_mask[:, args.used_mask]
     
 
-
 for i in range(args.repeat):
+    final_test_acc = []
     set_global_seed(args.seed + i * 10)
-    model = Net(data.x.size(dim=1), args.hidden_dim, data.y.max().item() + 1, args.dp).to(device)
-    data = data.to(device)
+    for msk in range(data.train_mask.shape[1]):
+        train_mask = data.train_mask[:, msk]
+        val_mask = data.val_mask[:, msk]
+        test_mask = data.test_mask[:, msk]
+        
+        model = Net(data.x.size(dim=1), args.hidden_dim, data.y.max().item() + 1, args.dp).to(device)
+        data = data.to(device)
 
-    optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
-    loss = nn.CrossEntropyLoss()
+        optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
+        loss = nn.CrossEntropyLoss()
 
-    best_acc = 0
-    best_loss = 9999999
-    time_start = time.time()
-    with tqdm(range(args.epoch)) as tq:
-        for epoch in tq:
-            model.train()
-            optimizer.zero_grad()
-            output = model(data)
-            loss_t = loss(output[data.train_mask], data.y[data.train_mask])
-            loss_t.backward()
-            optimizer.step()
-            train_loss = loss_t.detach()
-            pred = output.argmax(dim=1)
-            train_acc = (pred[data.train_mask] == data.y[data.train_mask]).sum() / data.train_mask.sum()
-            model.eval()
-            with torch.no_grad():
+        best_epoch = 0
+        best_val_acc = 0
+        best_val_test_acc = 0
+        best_val_loss = 9999999
+        with tqdm(range(args.epoch)) as tq:
+            for epoch in tq:
+                model.train()
+                optimizer.zero_grad()
                 output = model(data)
-                loss_t = loss(output[data.val_mask], data.y[data.val_mask])
-                val_loss = loss_t
+                loss_t = loss(output[train_mask], data.y[train_mask])
+                loss_t.backward()
+                optimizer.step()
+                train_loss = loss_t.detach()
                 pred = output.argmax(dim=1)
-                val_acc = (pred[data.val_mask] == data.y[data.val_mask]).sum() / data.val_mask.sum()
-            infos = {
-                'Epoch': epoch,
-                'TrainLoss': '{:.3}'.format(train_loss.item()),
-                'TrainAcc': '{:.3}'.format(train_acc.item()),
-                'ValLoss': '{:.3}'.format(val_loss.item()),
-                'ValAcc': '{:.3}'.format(val_acc.item())
-            }
-            tq.set_postfix(infos)
-            if val_acc > best_acc:
-                best_loss = val_loss
-                best_acc = val_acc
-                torch.save(model.state_dict(), './ckpt/{}.pt'.format(args.model))
-                # print('Saved')
-    time_end = time.time()
-    time_spent = time_end - time_start
-    print('Time spent: {:.3}, {:.3} iter per sec'.format(time_spent, args.epoch / time_spent))       
-    model = Net(data.x.size(dim=1), args.hidden_dim, data.y.max().item() + 1, args.dp).to(device)
-    model.load_state_dict(torch.load('./ckpt/{}.pt'.format(args.model)))
-    model.eval()
-    output = model(data)
-
-    loss_t = loss(output[data.test_mask], data.y[data.test_mask])
-    test_loss = loss_t
-    pred = output.argmax(dim=1)
-    test_acc = (pred[data.test_mask] == data.y[data.test_mask]).sum() / data.test_mask.sum()
-    print('TestLoss: {:.3}, TestAcc: {:.3}'.format(test_loss.item(), test_acc.item() * 100))
+                train_acc = (pred[train_mask] == data.y[train_mask]).sum() / train_mask.sum()
+                model.eval()
+                with torch.no_grad():
+                    output = model(data)
+                    loss_t = loss(output[val_mask], data.y[val_mask])
+                    val_loss = loss_t
+                    pred = output.argmax(dim=1)
+                    val_acc = (pred[val_mask] == data.y[val_mask]).sum() / val_mask.sum()
+                    test_acc = (pred[test_mask] == data.y[test_mask]).sum() / test_mask.sum()
+                infos = {
+                    'Epoch': epoch,
+                    'TrainLoss': '{:.3}'.format(train_loss.item()),
+                    'TrainAcc': '{:.3}'.format(train_acc.item()),
+                    'ValLoss': '{:.3}'.format(val_loss.item()),
+                    'ValAcc': '{:.3}'.format(val_acc.item()),
+                    'TestAcc': '{:.3}'.format(test_acc.item())
+                }
+                tq.set_postfix(infos)
+                if val_acc > best_val_acc:
+                    best_val_loss = val_loss
+                    best_val_acc = val_acc
+                    best_val_test_acc = test_acc
+                    best_epoch = epoch
+            final_test_acc.append(best_val_test_acc.item() * 100)
+        
+    print('Mean: {:.3f}, Std: {:.3f}'.format(np.mean(final_test_acc) , np.std(final_test_acc)))
 
 
