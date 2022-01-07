@@ -55,21 +55,6 @@ elif args.dataset in ['NELL']:
     data = dataset[0]
     
 
-# data.edge_index = torch.from_numpy(mask_heter_edges(data.edge_index.numpy(), data.y))
-# data.train_mask, data.val_mask, data.test_mask = generate_mask(data.x.size(dim=0), 0.48, 0.32)
-
-record_file = open('./records/record.txt', 'a+')
-
-test_pred = []
-test_label = []
-test_node_degree = []
-
-# data.x = to_dense_adj(data.edge_index).squeeze(dim=0)
-# print('Warning: using adj as feature')
-
-# data.x = torch.eye(data.x.size(dim=0))
-# print('Warning: using identity as feature')
-# print(data.x.shape)
 if args.cal_degree:
     adj = to_dense_adj(data.edge_index.cpu()).squeeze(dim=0)
     node_degree = adj.sum(dim=0) + adj.sum(dim=1)
@@ -124,16 +109,11 @@ for i in range(args.repeat):
     model.load_state_dict(torch.load('./ckpt/{}.pt'.format(args.model)))
     model.eval()
     output = model(data)
-    # visualize
-    # from visual.visualize import plot_tsne
-    # plot_tsne(output[data.test_mask].cpu().detach(), data.y[data.test_mask].cpu().detach(), 'gcn-{}'.format(args.dataset), seed=args.seed, pca_dim=0, alpha=0.8)
-
+    
     loss_t = loss(output[data.test_mask], data.y[data.test_mask])
     test_loss = loss_t
     pred = output.argmax(dim=1)
     test_acc = (pred[data.test_mask] == data.y[data.test_mask]).sum() / data.test_mask.sum()
     print('TestLoss: {:.3}, TestAcc: {:.3}'.format(test_loss.item(), test_acc.item() * 100))
     # show_class_acc(pred[data.test_mask], data.y[data.test_mask])
-    record_file.write('{:.4}\n'.format(test_acc.item() * 100))
 
-record_file.close()
