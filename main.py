@@ -18,7 +18,6 @@ from configs import args
 print(args)
 
 
-
 if args.model == 'mlp':
     Net = MLPNet
 elif args.model == 'gcn':
@@ -109,6 +108,6 @@ for i in range(args.repeat):
         best_val_test_acc = main(data, train_mask, val_mask, test_mask)
         final_test_acc.append(best_val_test_acc.item() * 100)
 
-print('Mean: {:.3f}, Std: {:.3f}'.format(np.mean(final_test_acc) , np.std(final_test_acc)))
+print('Mean: {:.2f}, Std: {:.2f}'.format(np.mean(final_test_acc) , np.std(final_test_acc)))
 
 
