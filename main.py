@@ -11,6 +11,7 @@ from model.mlp import MLPNet
 from model.gcn import GCNNet
 from model.gat import GATNet
 from model.gin import GINNet
+from model.sage import SAGE
 
 from utils import set_global_seed, generate_mask
 from configs import args
@@ -26,6 +27,8 @@ elif args.model == 'gat':
     Net = GATNet
 elif args.model == 'gin':
     Net = GINNet
+elif args.model == 'sage':
+    Net = SAGE
 else:
     raise NotImplementedError
 
@@ -45,7 +48,7 @@ elif args.dataset in ['squirrel', 'chameleon']:
 elif args.dataset in ['photo', 'computers']:
     dataset = Amazon(root='./data', name=args.dataset)
     data = dataset[0]
-    data.train_mask, data.val_mask, data.test_mask = generate_mask(data.num_nodes, 0.6, 0.2)
+    data.train_mask, data.val_mask, data.test_mask = generate_mask(data.num_nodes, 0.1, 0.2)
 
 
 def main(data, train_mask, val_mask, test_mask):
@@ -79,10 +82,10 @@ def main(data, train_mask, val_mask, test_mask):
             infos = {
                 'Epoch': epoch,
                 'TrainLoss': '{:.3}'.format(train_loss.item()),
-                'TrainAcc': '{:.3}'.format(train_acc.item()),
-                'ValLoss': '{:.3}'.format(val_loss.item()),
-                'ValAcc': '{:.3}'.format(val_acc.item()),
-                'TestAcc': '{:.3}'.format(test_acc.item())
+                'Train': '{:.3}'.format(train_acc.item()),
+                # 'ValLoss': '{:.3}'.format(val_loss.item()),
+                'Val': '{:.3}'.format(val_acc.item()),
+                'Test': '{:.3}'.format(test_acc.item())
             }
             tq.set_postfix(infos)
             if val_acc > best_val_acc:

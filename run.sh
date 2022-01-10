@@ -1,1 +1,1 @@
-python3 main.py --model gcn --dataset cora --seed 42 --repeat 1
+ python main.py --model sage --lr 1e-2 --dataset wisconsin  --repeat 1
