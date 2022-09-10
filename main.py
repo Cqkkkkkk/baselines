@@ -7,11 +7,11 @@ from tqdm import tqdm
 from torch.optim import Adam
 from torch_geometric.datasets import Planetoid, WebKB, WikipediaNetwork, Amazon
 
-from model.mlp import MLPNet
-from model.gcn import GCNNet
-from model.gat import GATNet
-from model.gin import GINNet
-from model.sage import SAGE
+from model.node_classification.mlp import MLPNet
+from model.node_classification.gcn import GCNNet
+from model.node_classification.gat import GATNet
+from model.node_classification.gin import GINNet
+from model.node_classification.sage import SAGE
 
 from utils import set_global_seed, generate_mask
 from configs import args
