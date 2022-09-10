@@ -1,16 +1,9 @@
 import torch
 import numpy as np
 from torch_geometric.utils import remove_isolated_nodes
-
-# import sys
-# from os import path
-
-
-# def append_path():
-#     sys.path.append("..")
-#     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-#     sys.path.append(path.dirname(path.abspath(__file__)))
-#     sys.path.append(path.abspath(__file__))
+from torch_geometric.data import Data, HeteroData
+from torch_geometric.transforms import BaseTransform
+from typing import Union
 
 
 def cal_edge_homophily(edge_index, labels):
@@ -82,3 +75,14 @@ def add_self_loops_to_isolated(edge_index, num_nodes):
         new_edges = torch.cat((new_edges, loop_edge))
 
     return new_edges.T
+
+
+# Transform to convert feature from Long to Float
+class Int2Float(BaseTransform):
+    def __init__(self):
+        pass
+
+    def __call__(self, data: Union[Data, HeteroData]):
+        data.node_stores[0]['x'] =  data.node_stores[0]['x'].float()
+        return data
+
