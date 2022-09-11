@@ -42,7 +42,7 @@ def test(model, loader):
     for data in loader:  # Iterate in batches over the test dataset.
         out = model(data.x, data.edge_index, data.batch)  
         mae += criterion(out.squeeze(dim=-1), data.y)
-    return mae  
+    return mae / len(loader)
 
 with tqdm(range(100)) as tq:
     for epoch in tq:
