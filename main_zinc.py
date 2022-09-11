@@ -25,30 +25,31 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
 criterion = torch.nn.L1Loss()
 
 
-def train(model):
+def train(model, loader):
     model.train()
     
-    for data in train_loader:
-        out = model(data.x, data.edge_index, data.batch)  # Perform a single forward pass.
-        loss = criterion(out.squeeze(dim=-1), data.y)  # Compute the loss.
-        loss.backward()  # Derive gradients.
-        optimizer.step()  # Update parameters based on gradients.
-        optimizer.zero_grad()  # Clear gradients.
+    for data in loader:   # Iterate in batches over the training dataset.
+        out = model(data.x, data.edge_index, data.batch)  
+        loss = criterion(out.squeeze(dim=-1), data.y)  
+        loss.backward()                   
+        optimizer.step() 
+        optimizer.zero_grad()  
 
 
-def test(loader):
+def test(model, loader):
     model.eval()
 
     mae = 0
-    for data in loader:  # Iterate in batches over the training/test dataset.
+    for data in loader:  # Iterate in batches over the test dataset.
         out = model(data.x, data.edge_index, data.batch)  
         mae += criterion(out.squeeze(dim=-1), data.y)
     return mae  
 
 
 for epoch in range(100):
-    train(model)
-    train_acc = test(train_loader)
-    test_acc = test(test_loader)
+    train(model, train_loader)
+    train_acc = test(model,train_loader)
+    val_acc = test(model, val_loader)
+    test_acc = test(model, test_loader)
 
-    print('Epoch {}: TrainMAE {:.3f} TestMAE {:.3f}'.format(epoch, train_acc, test_acc))
+    print('Epoch {}: TrainMAE {:.3f} ValMAE {:.3f} TestMAE {:.3f}'.format(epoch, train_acc, val_acc, test_acc))
