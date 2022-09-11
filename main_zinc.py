@@ -1,11 +1,10 @@
 import torch
 import pdb
-import tqdm
 
+from tqdm import tqdm
 from torch_geometric.loader import DataLoader
 from torch_geometric.datasets import ZINC
 from model.graph_regression.gcn import GCN
-
 
 from utils import Int2Float
 
@@ -27,7 +26,7 @@ criterion = torch.nn.L1Loss()
 
 def train(model, loader):
     model.train()
-    
+
     for data in loader:   # Iterate in batches over the training dataset.
         out = model(data.x, data.edge_index, data.batch)  
         loss = criterion(out.squeeze(dim=-1), data.y)  
@@ -45,11 +44,16 @@ def test(model, loader):
         mae += criterion(out.squeeze(dim=-1), data.y)
     return mae  
 
-
-for epoch in range(100):
-    train(model, train_loader)
-    train_acc = test(model,train_loader)
-    val_acc = test(model, val_loader)
-    test_acc = test(model, test_loader)
-
-    print('Epoch {}: TrainMAE {:.3f} ValMAE {:.3f} TestMAE {:.3f}'.format(epoch, train_acc, val_acc, test_acc))
+with tqdm(range(100)) as tq:
+    for epoch in tq:
+        train(model, train_loader)
+        train_mae = test(model,train_loader)
+        val_mae = test(model, val_loader)
+        test_mae = test(model, test_loader)
+        infos = {
+            'Epoch' : epoch,
+            'TrainMAE': '{:.3f}'.format(train_mae),
+            'ValMAE': '{:.3f}'.format(val_mae),
+            'TestMAE': '{:.3f}'.format(test_mae)
+        }
+        tq.set_postfix(infos)
