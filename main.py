@@ -1,4 +1,4 @@
-import torch
+import torch, pdb
 import torch.nn as nn
 import numpy as np
 import torch_geometric.transforms as T
@@ -15,6 +15,7 @@ from model.node_classification.sage import SAGE
 
 from utils import set_global_seed, generate_mask
 from configs import args
+from utils import set_train_val_test_split
 
 print(args)
 
@@ -37,16 +38,16 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 if args.dataset in ['cora', 'citeseer', 'pubmed']:
-    dataset = Planetoid(root='./data', name=args.dataset, transform=T.NormalizeFeatures())
+    dataset = Planetoid(root='../datasets', name=args.dataset, transform=T.NormalizeFeatures())
     data = dataset[0]
 elif args.dataset in ['texas', 'cornell', 'wisconsin']:
-    dataset = WebKB(root='./data', name=args.dataset)
+    dataset = WebKB(root='../datasets', name=args.dataset)
     data = dataset[0]
 elif args.dataset in ['squirrel', 'chameleon']:
-    dataset = WikipediaNetwork(root='./data', name=args.dataset)
+    dataset = WikipediaNetwork(root='../datasets', name=args.dataset)
     data = dataset[0]
 elif args.dataset in ['photo', 'computers']:
-    dataset = Amazon(root='./data', name=args.dataset)
+    dataset = Amazon(root='../datasets', name=args.dataset)
     data = dataset[0]
     data.train_mask, data.val_mask, data.test_mask = generate_mask(data.num_nodes, 0.1, 0.2)
 
@@ -105,6 +106,8 @@ for i in range(args.repeat):
             best_val_test_acc = main(data, train_mask, val_mask, test_mask)
             final_test_acc.append(best_val_test_acc.item() * 100)
     else:
+        data = set_train_val_test_split(seed=42, data=data)
+        # pdb.set_trace()
         train_mask = data.train_mask
         val_mask = data.val_mask
         test_mask = data.test_mask

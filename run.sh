@@ -1,1 +1,1 @@
- python main.py --model sage --lr 1e-2 --dataset wisconsin  --repeat 1
+ python main.py --model gcn --lr 1e-2 --dataset cora  --repeat 10

@@ -86,3 +86,38 @@ class Int2Float(BaseTransform):
         data.node_stores[0]['x'] =  data.node_stores[0]['x'].float()
         return data
 
+
+def set_train_val_test_split(
+        seed: int,
+        data: Data,
+        num_development: int = 1500,
+        num_per_class: int = 20) -> Data:
+    #rnd_state = np.random.RandomState(development_seed)
+    num_nodes = data.y.shape[0]
+    all_idx = np.arange(num_nodes)
+    #development_idx = rnd_state.choice(num_nodes, num_development, replace=False)
+    #test_idx = [i for i in np.arange(num_nodes) if i not in development_idx]
+
+    train_idx = []
+    rnd_state = np.random.RandomState(seed)
+    for c in range(data.y.max() + 1):
+        # print(all_idx[np.where(data.y.cpu() == c)[0]])
+        # exit()
+        class_idx = all_idx[np.where(data.y.cpu() == c)[0]]
+        train_idx.extend(rnd_state.choice(class_idx, num_per_class, replace=False))
+
+    ctrain_idx = np.array([i for i in np.arange(num_nodes) if i not in train_idx])
+    ctrain_idx_val = rnd_state.choice(num_nodes - len(train_idx), num_development - len(train_idx), replace=False)
+    val_idx = ctrain_idx[ctrain_idx_val]
+    test_idx = ctrain_idx[[i for i in np.arange(num_nodes - len(train_idx)) if i not in ctrain_idx_val]]
+
+    def get_mask(idx):
+        mask = torch.zeros(num_nodes, dtype=torch.bool)
+        mask[idx] = 1
+        return mask
+
+    data.train_mask = get_mask(train_idx)
+    data.val_mask = get_mask(val_idx)
+    data.test_mask = get_mask(test_idx)
+
+    return data

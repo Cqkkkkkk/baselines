@@ -1,4 +1,5 @@
 import torch
+import pdb
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GATConv
@@ -8,7 +9,7 @@ class GATNet(nn.Module):
     def __init__(self, in_dim, hidden_dim, out_dim, dropout=0.5):
         super().__init__()
         self.conv1 = GATConv(in_dim, hidden_dim // 4, heads=4)
-        self.conv2 = GATConv(hidden_dim, out_dim, heads=4)
+        self.conv2 = GATConv(hidden_dim, out_dim, heads=1)
         self.dropout = dropout
 
     def forward(self, data):
