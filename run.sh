@@ -1,1 +1,1 @@
- python main.py --model gcn --lr 1e-2 --dataset cora  --repeat 10
+ python main.py --cfg configs/base.yaml
